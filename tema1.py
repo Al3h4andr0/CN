@@ -74,21 +74,74 @@ def strassen(A, B, q, qmin):
     C22 = P1 + P3 - P2 + P6
     return C11, C12, C21, C22
 
+def isPowerOfTwo(matrixx) : 
+    i = 0
+    n = len(matrixx)
+    while 2**i < n : 
+        i += 1
+    if 2**i == n :
+        return True
+    else :
+        return False
+
+def getNextPower(n) : 
+    i = 0
+    while 2**i < n : 
+        i += 1
+    if 2**i < n : 
+        return i+1
+    else : 
+        return i
+
+
+def extraStep(A,B): 
+    m = getNextPower(len(A))
+    newA = np.zeros((2**(m),2**(m)))
+    newB = np.zeros((2**(m),2**(m)))
+    for i in range(len(A)):
+        for j in range(len(A)) : 
+            newA[i][j] = A[i][j]
+            newB[i][j] = B[i][j]
+    return newA,newB
+
+def removeExtraLines(matrixx, desiredN) : 
+    newMatrixx = np.zeros((desiredN,desiredN))
+    for i in range(len(newMatrixx)) : 
+        for j in range(len(newMatrixx)) : 
+            newMatrixx[i][j] = matrixx[i][j]
+    return newMatrixx
 
 if __name__ == "__main__":
     pwr = ex1()
     print(f"i este : {pwr} \n1+u**i != 1 : {1 + 10 ** pwr != 1} \n1+u**(i-1) != 1 : {1 + 10 ** (pwr - 1) != 1}\n\n")
-
     ex2()
+    A = np.array([[1,2,3],
+                  [3,4,5],
+                  [7,8,9]])
+    B = np.array([[5,6,7],
+                  [7,8,7],
+                  [8,9,3]])
 
-    A = np.array([[1, 2, 3, 4],
-                  [3, 4, 5, 6],
-                  [7, 8, 9, 10],
-                  [2, 2, 2, 2]])
-    B = np.array([[5, 6, 7, 8],
-                  [7, 8, 7, 8],
-                  [8, 9, 3, 2],
-                  [2, 5, 7, 9]])
-    C11, C12, C21, C22 = strassen(A, B, 2, 1)
-    print(concatenate(C11, C12, C21, C22, 1))
-    print(np.matmul(A, B))
+    # A = np.array([[1,2,3,4],
+    #               [3,4,5,6],
+    #               [7,8,9,10],
+    #               [2,2,2,2]])
+    # B = np.array([[5,6,7,8],
+    #               [7,8,7,8],
+    #               [8,9,3,2],
+    #               [2,5,7,9]])
+    if isPowerOfTwo(A) and len(A) == len(B) and len(A[0]) == len(B[0]) :
+        C11,C12,C21,C22 = strassen(A,B,2,1)
+        print(concatenate(C11,C12,C21,C22,1))
+        print(np.matmul(A,B))
+    elif len(A) == len(B) and len(A[0]) == len(B[0]) : 
+        originalN = len(A)
+        newA,newB = extraStep(A,B)
+        C11,C12,C21,C22 = strassen(newA,newB,2,1)
+        result = concatenate(C11,C12,C21,C22,1)
+        print(removeExtraLines(result, originalN))
+        print(np.matmul(A,B))
+    else : 
+        print("Wrong input. Correct it please")
+
+
