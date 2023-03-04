@@ -1,165 +1,113 @@
-import math
-from functools import reduce
-
-#import scipi.linalg.solv
 import numpy as np
 import copy
+import scipy.linalg as sc
 
 
-# determinantul unei matrici folosind minori
-def det(A):
-    if len(A) == 2:
-        return float(A[0][0]) * float(A[1][1]) - float(A[0][1]) * float(A[1][0])
-    else:
-        D = 0
-    for i in range(0, len(A)):
-        M = copy.copy(A)
-        # M = A[:]
-        if i % 2 == 0:
-            D = D + float(A[0][i]) * det(minor(M, 0, i))
-        else:
-            D = D - float(A[0][i]) * det(minor(M, 0, i))
-    return D
+def determinant(A):
+    n = A.shape[0]
+    if n == 1:
+        return A[0, 0]
+    det = 0
+    for j in range(n):
+        A_sub = np.delete(np.delete(A, 0, axis=0), j, axis=1)
+        det += ((-1) ** j) * A[0, j] * determinant(A_sub)
+    return det
 
+def minor(A, i, j):
+    submatrix = copy.deepcopy(A)
+    submatrix = [list(row) for it, row in enumerate(submatrix) if it != i]
+    submatrix = [list(col) for it, col in enumerate(zip(*submatrix)) if it != j]
+    return np.asarray(submatrix)
 
-def minor(Matrice, i, j):  # matrice in care s-a sters linia i si coloana j
-    Minor = []
-    Minor[:i] = Matrice[:i]
-    Minor[i:] = Matrice[i + 1:]
-    Minor2 = [x[:] for x in Minor]
-    for rand in Minor2:
-        del rand[j]
-    return Minor2
+def is_positive_definite(A):
+    n, m = A.shape
+    for i in reversed(range(n)):
+        submatrix = minor(A, i, i)
+        if determinant(submatrix) < 0:
+            return False
+    return True
 
+def ldl_decomposition(A):
+    n = A.shape[0]
+    L = np.identity(n)
+    D = np.zeros(n)
 
-# functia care verifica impartirea
-def impartire(a, b, e):
-    if b > e:
-        return float(a / b)
-    else:
-        print("NU se poate face impartire " + str(a) + " / " + str(b))
-        raise ArithmeticError
-
-
-def factorizare_clolesky(A, epsilon=10 ** (-5)):
-    n = len(A)
-    D = [0.0 * n for i in range(0, n)]
-    try:
-        for i in range(0, n):
-            if i == 0:
-                D[i] = A[i][i]
-                value = [impartire(x, D[i], epsilon) for x in A[:][i]]
-                for j in range(0, n):
-                    A[j][i] = value[j]
+    for j in range(n):
+        for i in range(j, n):
+            s = 0
+            for k in range(j):
+                s += L[i, k] * D[k] * L[j, k]
+            if i == j:
+                D[j] = A[j, j] - s
             else:
-                lista = [D[x] * (A[i][x] ** 2) for x in range(0, i)]
-                D[i] = A[i][i] - sum(lista)
-                suma = sum([D[x] * A[p][x] * A[i][x] for x in range(0, i) for p in range(i + 1, n)])
-                for p in range(i + 1, n):
-                    A[p][i] = impartire(A[i + 1][i] - suma, D[i], epsilon)
-    except ArithmeticError as e:
-        return
+                L[i, j] = (A[i, j] - s) / D[j]
 
-    return (D)
+    return L, D
 
 
-# Ex2
-
-def determinant_chol(D):  # determinant ce foloseste descompunerea Cholensky
-    # D = (factorizare_Clolesky(A,(10**(-6))))[1]
-    return reduce(lambda x, y: x * y, D)
-
-
-A = [[1, -1, 2], [-1, 5, -4], [2, -4, 6]]
-
-# print factorizare_Clolesky(A,(10**(-5)))
-# print determinant(A)
-print(A)
+def forward_substitution(L, b):
+    n = L.shape[0]
+    y = np.zeros(n)
+    for i in range(n):
+        s = 0
+        for j in range(i):
+            s += L[i, j] * y[j]
+        y[i] = (b[i] - s) / L[i, i]
+    return y
 
 
-# Ex 3
-
-def rezolvare_inferior_adaptat(A,
-                               b):  # se adapteaza contextului vizat: elementele lui L sub diagonala matricei A si rezolva Lz = b
-    z = [0.0] * len(A)
-
-    for i in range(len(A)):
-        suma = sum([A[i][j] * z[j] for j in range(0, i)])
-        z[i] = (b[i] - suma)
-
-    return z
-
-
-def transpusa(Matrice):
-    return [list(i) for i in zip(*Matrice)]
-
-
-def rezolvare_superior_adaptata(A, b):  #
-    n = len(A)
-    x = [0.0] * n
-
-    for i in reversed(range(0, n)):
-        suma = 0.0
+def backward_substitution(L_transpose, z):
+    n = L_transpose.shape[0]
+    x = np.zeros(n)
+    for i in range(n - 1, -1, -1):
+        s = 0
         for j in range(i + 1, n):
-            suma += A[j][i] * x[j]
-        # print "suma pt i = " + str(i) + " este "+str(suma)
-        x[i] = (b[i] - suma)
-
+            s += L_transpose[i, j] * x[j]
+        x[i] = (z[i] - s) / L_transpose[i, i]
     return x
 
 
-def rezolvare_sistem(A, D, b):
-    # D = factorizare_Clolesky(A, (10 ** (-6)))[1]
-    # print A
-    z = rezolvare_inferior_adaptat(A, b)
-    # print "z: " + str(z)
-    y = [z[i] / D[i] for i in range(len(A))]
-    print("y: " + str(y))
-    x = rezolvare_superior_adaptata(A, y)
+def ldl_solver(A, b):
+    Ainit = copy.deepcopy(A)
+    L, D = ldl_decomposition(Ainit)
+
+    y = forward_substitution(L, b)
+    z = y / D
+    L_transpose = L.T
+    x = backward_substitution(L_transpose, z)
     return x
 
 
-# Ex5
-def prod(M, v):  # produsul dintre o matrice si un vector
-    res = []
+if __name__ == "__main__":
+    print("INCEPEM")
+    # A = np.array([[1, -1, 2], [-1, 5, -4], [2, -4, 6]])
+    # b = np.array([2, 5, 6])
+    n = 10
+    A = np.random.uniform(-10, 10, size=(n, n))
+    A = 0.5 * (A + A.T)
+    b = np.random.uniform(-10, 10, size=n)
+    is_positive = is_positive_definite(A)
 
-    for i in range(len(M)):
-        s = 0.0
-        for j in range(0, len(M)):
-            if i <= j:
-                s += M[i][j] * v[j]
-            else:
-                s += M[j][i] * v[j]
-        res.append(s)
+    if not is_positive or len(A) != len(A[0]):
+        print("Matrix is not positive definite or is not quadratic")
+    else:
+        print("OK")
 
-    return res
+    while not is_positive:
+        print("Looking for another matrix...")
+        A = np.random.uniform(-10, 10, size=(n, n))
+        A = 0.5 * (A + A.T)
+        b = np.random.uniform(-10, 10, size=n)
+        is_positive = is_positive_definite(A)
+    print("Found a matrix.")
 
+    L, D = ldl_decomposition(copy.deepcopy(A))
 
-def norma(z):
-    return math.sqrt(np.sum(np.power(z, 2.0)))
+    print("L:", L, "\nD:", D, "\n")
+    print("det(A) = ", determinant(L) * determinant(np.diag(D)) * determinant(L.T))
+    our_x = ldl_solver(copy.deepcopy(A), b)
+    print("RESULT: ", our_x)
 
-
-def dif(a, b):
-    return [a[i] - b[i] for i in range(len(a))]
-
-
-'''
-b = [2,5,6]
-Ainit = copy.deepcopy(A)
-x = sc.solve(A, b)
-print "Rezolvare corecta" + str(x)
-print "verificare: " + str(np.linalg.norm((np.dot(A,x)-b)) )
-xi = rezolvare_sistem(A,b,b)
-print "Rezolvarea mea:" + str(xi)
-print "verificare: " + str(np.linalg.norm((np.dot(Ainit,xi)-b)) )
-print "verificare: " + str(norma(dif(prod(Ainit,xi),b)) )
-'''
-b = [2,5,6]
-Ainit = copy.deepcopy(A)
-x = sc.solve(A, b)
-print("Rezolvare corecta" + str(x))
-print("verificare: " + str(np.linalg.norm((np.dot(A, x)-b))))
-xi = rezolvare_sistem(A, b, b)
-print("Rezolvarea mea:" + str(xi))
-print("verificare: " + str(np.linalg.norm((np.dot(Ainit, xi) - b))))
-print("verificare: " + str(norma(dif(prod(Ainit, xi), b))))
+    x = sc.solve(copy.deepcopy(A), b)
+    print("Expected result:", x)
+    print("Norm (Verification): ", np.linalg.norm((np.dot(A, our_x) - b)))
