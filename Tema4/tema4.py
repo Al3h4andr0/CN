@@ -2,13 +2,14 @@ import copy
 import sys
 from collections import defaultdict
 
+import numpy
 import numpy as np
 
 
 class SparseMatrix:
     def __init__(self, n, data, rows, cols):
         self.n = n
-        self.matrix = defaultdict(lambda: defaultdict(float))
+        self.matrix = defaultdict(lambda: defaultdict(numpy.float64))
         for i, entry in enumerate(data):
             current_row = rows[i]
             current_col = cols[i]
@@ -16,6 +17,9 @@ class SparseMatrix:
 
     def __getitem__(self, item):
         return self.matrix[item]
+
+    def __len__(self):
+        return self.n
 
 
 def read_sparse_matrix(filename):
@@ -54,61 +58,51 @@ def read_b(filename):
     return b
 
 
-def gauss_seidel(A, b, x0, tol=1e-6, max_iter=1000):
-    pass
-    # # TODO: Change this
-    # """
-    # Solves the linear system Ax = b using the Gauss-Seidel method.
-    #
-    # Parameters
-    # ----------
-    # A : numpy.ndarray
-    #     The coefficient matrix of the linear system.
-    # b : numpy.ndarray
-    #     The right-hand side vector of the linear system.
-    # x0 : numpy.ndarray
-    #     The initial guess for the solution vector.
-    # tol : float, optional
-    #     The tolerance for the residual norm. Default is 1e-6.
-    # max_iter : int, optional
-    #     The maximum number of iterations. Default is 1000.
-    #
-    # Returns
-    # -------
-    # numpy.ndarray
-    #     The solution vector x.
-    #
-    # Raises
-    # ------
-    # ValueError
-    #     If the coefficient matrix is not square, or if it is not diagonally dominant.
-    #
-    # """
-    # # Check that the matrix is square
-    # n, m = A.shape
-    # if n != m:
-    #     raise ValueError("Matrix A must be square")
-    #
-    # # Check that the matrix is diagonally dominant
-    # if not np.all(np.abs(A.diagonal()) >= np.sum(np.abs(A), axis=1) - np.abs(A.diagonal())):
-    #     raise ValueError("Matrix A must be diagonally dominant")
-    #
-    # # Initialize the solution vector
-    # x = x0.copy()
-    #
-    # # Perform the iterations
-    # for k in range(max_iter):
-    #     # Compute the new estimates for each unknown
-    #     for i in range(n):
-    #         x[i] = (b[i] - np.dot(A[i, :i], x[:i]) - np.dot(A[i, i + 1:], x[i + 1:])) / A[i, i]
-    #
-    #     # Check the convergence criterion
-    #     r = b - np.dot(A, x)
-    #     if np.linalg.norm(r) < tol:
-    #         break
-    #
-    # # Return the solution vector
-    # return x
+def gauss_seidel(A, b, tol=1e-10, max_iter=100):
+    # Check the dimensions of A and b
+    n = len(A)
+    x0 = np.zeros(n, dtype=np.float64)
+    if len(b) != n:
+        raise ValueError("Incompatible dimensions")
+
+    # Initialize the solution vector x
+    x = np.copy(x0)
+
+    # Perform the Gauss-Seidel iteration
+    for k in range(max_iter):
+        # Update each component of x in turn
+        for i in range(n):
+            # Compute the new value of x[i] using the current values of x and the elements of A and b
+            Ax = sum(A[i][j] * x[j] for j in A[i] if j != i)
+            x[i] = (b[i] - Ax) / A[i][i]
+
+        # Compute the relative error in the solution and check if it is below the tolerance
+        r = np.linalg.norm(mat_vec_mult(A, x) - b) / np.linalg.norm(b)
+        if r < tol:
+            break
+
+    # Check if the maximum number of iterations was reached
+    if k == max_iter - 1:
+        print("Warning: maximum number of iterations reached")
+
+    # Return the solution vector x
+    return x
+
+
+def mat_vec_mult(A, x):
+    # Check the dimensions of A and x
+    n = len(A)
+    if x.size != n:
+        raise ValueError("Incompatible dimensions")
+
+    # Compute the product of A and x
+    Ax = np.zeros(n, dtype=numpy.float64)
+    for i in range(n):
+        for j in A[i]:
+            Ax[i] += A[i][j] * x[j]
+
+    # Return the result
+    return Ax
 
 
 if __name__ == "__main__":
@@ -119,6 +113,8 @@ if __name__ == "__main__":
         n, data, rows, cols = read_sparse_matrix("a_{}.txt".format(i))
         matrix = SparseMatrix(n, data, rows, cols)
         free_terms = read_b("b_{}.txt".format(i))
+        print("a_{}.txt = ".format(i), len(matrix))
+        print("b_{}.txt".format(i), f'={len(free_terms)}')
         matrixes.append(matrix)
         bees.append(free_terms)
 
@@ -126,10 +122,8 @@ if __name__ == "__main__":
         if check_main_diagonal(matrix) is False:
             print("An item on the diagonal is 0")
             sys.exit()
-
     for i, matrix in enumerate(matrixes):
-        # x_gs = gauss_seidel(matrix)
-        x_gs = copy.deepcopy(bees[i])
-        # print(f"Norm for matrix {i}", np.linalg.norm(np.dot(matrix.matrix, x_gs) - bees[i]))
+        x_gs = gauss_seidel(matrix, bees[i])
+        print(f"Norm for matrix {i+1}", np.linalg.norm(mat_vec_mult(matrix, x_gs) - bees[i]))
 
 
