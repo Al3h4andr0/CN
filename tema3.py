@@ -9,24 +9,10 @@ def calculate_b(A, s):
         for j in range(n):
             element += s[j] * A[i][j]
         b.append(element)
-
     return b
 
 
 def qr_householder(A):
-    """
-    Compute the QR decomposition of a matrix A using Householder reflections.
-
-    Parameters:
-    A : numpy.ndarray
-        The matrix to be decomposed.
-
-    Returns:
-    Q : numpy.ndarray
-        The orthogonal matrix Q in the decomposition.
-    R : numpy.ndarray
-        The upper triangular matrix R in the decomposition.
-    """
     m, n = A.shape
     R = A.copy()
     Q = np.identity(m)
@@ -54,17 +40,6 @@ def solve_qr(Q, R, b):
 
 
 def inverse_qr(A):
-    """
-    Compute the inverse of a matrix A using QR decomposition.
-
-    Parameters:
-    A : numpy.ndarray
-        The matrix to be inverted.
-
-    Returns:
-    A_inv : numpy.ndarray
-        The inverse of A.
-    """
     Q, R = np.linalg.qr(A)
     n = A.shape[0]
     A_inv = np.zeros((n, n))
