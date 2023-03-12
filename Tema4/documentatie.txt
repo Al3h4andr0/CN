@@ -1,0 +1,26 @@
+ self.matrix = defaultdict(lambda: defaultdict(numpy.float64))
+
+ Matricea este memorata ca un dictionar de dictionare. defaultdict este un obiect din libraria collections, gasita in python by default.
+ Acest dictionar are by default un behaviour asemanator cu un try catch in care, daca o cheie nu este gasita, se va returna o valoare default,
+ de exemplu, pentru float este 0.
+
+ Acel lambda este un wrapper pentru a defini base type-ul ca dictionar, deoarece o alta colectie nu este o primitiva, asadar nu este acceptata
+ de catre defaultdict. Lambda-ul va da return de fiecare data la un alt dictionar ce are valoare default float 0.
+
+ Cand o linie este accesata out of bounds, se va returna un dictionar gol. Cand o coloana se va accesa care este out of bounds, se va returna 0, exact behaviour-ul dorit
+ pentru o matrice rara. Accesarea se face (aproape) la fel ca la o matrice salvata in mod conventional (M[i][j]), accesarea dureaza tot O(1) datorita naturii dictionarelor
+
+ ex:
+ matricea M=
+ [0, 2, 0]
+ [0, 5, 6]
+ [0, 0, 9]
+ Este salvata ca
+ M = dict {
+ 0: dict {1: 2}
+ 1: dict {1: 5, 2:6}
+ 2: dict {2: 9}
+ }
+
+ Daca se va accesa M[1], se va returna un dictionar de forma {1: 5, 2:6}. Daca, spre exemplu, am accesa M[1][0] se va returna valoare default (
+ mentionata in declarare: defaultdict(numpy.float64)), valoarea float 0. Daca cheia este gasita in dictionar, inseamna ca valoarea (i, j) este nenula si returnata

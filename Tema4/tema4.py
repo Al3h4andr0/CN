@@ -5,7 +5,6 @@ from collections import defaultdict
 import numpy
 import numpy as np
 
-
 class SparseMatrix:
     def __init__(self, n, data, rows, cols):
         self.n = n
@@ -20,6 +19,36 @@ class SparseMatrix:
 
     def __len__(self):
         return self.n
+
+# class SparseMatrix:
+#
+#     # class RowWrapper:
+#     #     def __init__(self, arr, columns, row):
+#     #         self.arr = arr
+#     #         self.columns = columns
+#     #         self.row = row
+#     #
+#     #     def __getitem__(self, row_item):
+#     #         if row_item in self.columns:
+#     #             return self.arr[self.columns.index(row_item)]
+#     #         else:
+#     #             return 0
+#
+#     def __init__(self, n, data, rows, cols):
+#         self.n = n
+#         self.data = data
+#         self.rows = rows
+#         self.cols = cols
+#
+#     def __getitem__(self, item):
+#         line_positions = [i for i, element in enumerate(self.rows) if element == item]
+#         column_positions = [self.cols[i] for i in line_positions]
+#         row_data = [self.data[i] for i in line_positions]
+#         wrapper = self.RowWrapper(row_data, column_positions, item)
+#         return wrapper
+#
+#     def __len__(self):
+#         return self.n
 
 
 def read_sparse_matrix(filename):
@@ -43,8 +72,11 @@ def read_sparse_matrix(filename):
 def check_main_diagonal(matrix: SparseMatrix):
     n = matrix.n
     for i in range(n):
-        if matrix[i][i] == 0:
-            return False
+        try:
+            if matrix[i][i] == 0:
+                return False
+        except Exception as e:
+            print(e)
     return True
 
 def read_b(filename):

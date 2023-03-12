@@ -82,7 +82,7 @@ if __name__ == "__main__":
     print("INCEPEM")
     # A = np.array([[1, -1, 2], [-1, 5, -4], [2, -4, 6]])
     # b = np.array([2, 5, 6])
-    n = 10
+    n = 100
     A = np.random.uniform(-10, 10, size=(n, n))
     A = 0.5 * (A + A.T)
     b = np.random.uniform(-10, 10, size=n)
