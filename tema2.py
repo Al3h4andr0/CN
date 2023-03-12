@@ -3,15 +3,15 @@ import copy
 import scipy.linalg as sc
 
 
-def determinant(A):
-    n = A.shape[0]
-    if n == 1:
-        return A[0, 0]
-    det = 0
-    for j in range(n):
-        A_sub = np.delete(np.delete(A, 0, axis=0), j, axis=1)
-        det += ((-1) ** j) * A[0, j] * determinant(A_sub)
-    return det
+# def determinant(A):
+#     n = A.shape[0]
+#     if n == 1:
+#         return A[0, 0]
+#     det = 0
+#     for j in range(n):
+#         A_sub = np.delete(np.delete(A, 0, axis=0), j, axis=1)
+#         det += ((-1) ** j) * A[0, j] * determinant(A_sub)
+#     return det
 
 def minor(A, i, j):
     submatrix = copy.deepcopy(A)
@@ -23,7 +23,7 @@ def is_positive_definite(A):
     n, m = A.shape
     for i in reversed(range(n)):
         submatrix = minor(A, i, i)
-        if determinant(submatrix) < 0:
+        if np.linalg.det(submatrix) < 0:
             return False
     return True
 
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     L, D = ldl_decomposition(copy.deepcopy(A))
 
     print("L:", L, "\nD:", D, "\n")
-    print("det(A) = ", determinant(L) * determinant(np.diag(D)) * determinant(L.T))
+    print("det(A) = ", np.linalg.det(L) * np.linalg.det(np.diag(D)) * np.linalg.det(L.T))
     our_x = ldl_solver(copy.deepcopy(A), b)
     print("RESULT: ", our_x)
 
